@@ -1,0 +1,56 @@
+import requests
+from bs4 import BeautifulSoup
+
+def create_falconebiz_url(base_url, company_name, cin):
+    formatted_company_name = company_name.replace(" ", "-").upper()
+    final_url = f"{base_url}company/{formatted_company_name}-{cin}"
+    return final_url
+
+def get_director_info(url):
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            director_table = soup.find('table')
+            if not director_table:
+                print("Director table not found.")
+                return
+
+            rows = director_table.find_all('tr')
+            print("\nDirector Information:")
+
+            for idx, row in enumerate(rows[1:], 1):
+                cells = row.find_all('td')
+                if len(cells) >= 3:
+                    din = cells[0].get_text(strip=True)
+                    name = cells[1].get_text(strip=True)
+                    designation = cells[2].get_text(strip=True)
+                    print(f"{idx}. DIN: {din}, Name: {name}, Designation: {designation}")
+        else:
+            print(f"Failed to retrieve the webpage. Status Code: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    base_url = "https://www.falconebiz.com/"
+
+    while True:
+        company_name = input("Enter the company name (or 'exit' to quit): ").strip()
+        if company_name.lower() == 'exit':
+            break
+
+        cin = input("Enter the CIN: ").strip()
+
+        if company_name and cin:
+            url = create_falconebiz_url(base_url, company_name, cin)
+            print(f"Accessing URL: {url}")
+            get_director_info(url)
+        else:
+            print("Company Name and CIN cannot be empty. Please try again.")
+
+if __name__ == "__main__":
+    main()
